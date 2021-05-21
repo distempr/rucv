@@ -53,8 +53,8 @@ export default function App() {
 							breakClassName='page-item'
 							previousClassName='page-item'
 							nextClassName='page-item'
-							marginPagesDisplayed={2}
-							pageRangeDisplayed={5}
+							marginPagesDisplayed={1}
+							pageRangeDisplayed={3}
 							onPageChange={(page) => setPage(page.selected + 1)}
 							forcePage={page - 1}
 							containerClassName='pagination justify-content-center'
