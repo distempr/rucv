@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+
+import csv
+import sqlite3
+import sys
+import zlib
+
+
+if len(sys.argv) < 2:
+    print('Please provide the path to the TSV file as the first argument.')
+    sys.exit(1)
+
+conn = sqlite3.connect('rucv.db')
+cursor = conn.cursor()
+
+with open(sys.argv[1], newline='') as file_:
+    next(file_) # skip first line (headers)
+    reader = csv.reader(file_, delimiter='\t')
+    for row in reader:
+        cv_id, filename, sentence, upvotes, downvotes, _, gender, _, _, _ = row
+        cursor.execute('INSERT OR IGNORE INTO speaker (cv_id, gender) VALUES (?, ?)', (cv_id, gender or None))
+
+        cursor.execute('SELECT id FROM speaker WHERE cv_id = ?', (cv_id,))
+        speaker = cursor.fetchone()[0]
+
+        crc = zlib.crc32(sentence.encode())
+        cursor.execute(
+            'INSERT OR IGNORE INTO sentence (content, filename, crc, speaker, upvotes, downvotes) VALUES (?, ?, ?, ?, ?, ?)',
+            (sentence, filename, crc, speaker, int(upvotes), int(downvotes))
+        )
+
+conn.commit()

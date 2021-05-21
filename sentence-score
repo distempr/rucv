@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+import sqlite3
+
+import stanza
+
+
+conn = sqlite3.connect('rucv.db')
+cursor = conn.cursor()
+update_cursor = conn.cursor()
+freq_cursor = conn.cursor()
+
+nlp = stanza.Pipeline(lang='ru')
+
+
+def get_rank(lemma, pos):
+    word = freq_cursor.execute(
+       'SELECT rank, frequency FROM frequency WHERE lemma = ? AND pos = ?',
+       (lemma, pos,)
+    ).fetchone()
+    return word
+
+
+sentences = cursor.execute('SELECT id, content, crc FROM sentence WHERE score IS NULL AND selected = 1 ORDER BY RANDOM()')
+for sentence in sentences: 
+    id_, content, crc = sentence
+    print(f'Processing sentence [{content}]')
+
+    doc = nlp(content)
+    score = 0
+    for sentence in doc.sentences:
+        for word in sentence.words:
+            if word.upos not in ['ADV', 'ADJ', 'NOUN', 'VERB']:
+                continue
+
+            rank = get_rank(word.lemma, word.upos)
+            if rank:
+                rank, freq = rank
+                score += rank
+            else:
+                continue
+
+    update_cursor.execute('UPDATE sentence SET score = ? WHERE crc = ?', (score, crc))
+    conn.commit()

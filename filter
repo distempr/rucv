@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+import sqlite3
+
+
+conn = sqlite3.connect('rucv.db')
+sentence_cursor = conn.cursor()
+update_cursor = conn.cursor()
+crc_cursor = conn.cursor()
+
+current_crc = None
+current_sentences = []
+
+
+# check content here?
+crc_cursor.execute('SELECT DISTINCT(crc), content FROM sentence ORDER BY crc')
+for crc in crc_cursor:
+    if ' ' not in crc[1]: # if its only one word, skip to the next
+        continue
+
+    # TODO remove content    
+    sentence_cursor.execute('SELECT sentence.id, content, gender, total_upvotes, total_downvotes FROM sentence INNER JOIN speaker ON sentence.speaker = speaker.id WHERE crc = ?', (crc[0],))
+
+    sentences = []
+    for sentence in sentence_cursor:
+        id_, content, gender, total_upvotes, total_downvotes = sentence
+        sentences.append(sentence)
+
+    speakers = []
+    for sentence in sentences:
+        speakers.append({
+            'sentence_id': sentence[0],
+            'gender': sentence[2],
+            'votes': sentence[3] - sentence[4]
+        })
+
+    speakers.sort(key=lambda s: s['votes'], reverse=True)
+    average_votes = sum(s['votes'] for s in speakers) / len(speakers)
+
+    first_best = speakers[0]['sentence_id']
+    second_best = None
+    for speaker in speakers[1:]:
+        # can't determine gender of best speaker, so can't find another speaker example of different gender
+        if not speakers[0]['gender']: 
+            break
+
+        if not speaker['gender']:
+            continue
+
+        if speaker['votes'] > average_votes and speaker['gender'] != speakers[0]['gender']:
+            second_best = speaker['sentence_id']
+            break
+
+    update_cursor.execute(
+        'UPDATE sentence SET selected = 1 WHERE id = ?',
+        (first_best,)
+    )
+    if second_best:
+        update_cursor.execute(
+            'UPDATE sentence SET selected = 2 WHERE id = ?',
+            (second_best,)
+        )
+
+    speakers.clear()
+    sentences.clear()
+
+conn.commit()

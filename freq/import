@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import csv
+import sqlite3
+
+
+conn = sqlite3.connect('../rucv.db')
+cursor = conn.cursor()
+
+
+def convert_pos(pos):
+    mappings = {
+        's': 'NOUN',
+        'a': 'ADJ',
+        'adv': 'ADV',
+        'v': 'VERB'
+    }
+
+    return mappings.get(pos, 'X')
+
+
+rank = 1
+with open('lemma-freq.tsv', newline='') as file_:
+    reader = csv.reader(file_, delimiter=' ')
+    for row in reader:
+        lemma, pos, freq = row
+        pos = convert_pos(pos)
+
+        print(f'{lemma}: {pos} ({freq})')
+        cursor.execute(
+            'INSERT OR IGNORE INTO frequency (lemma, rank, pos, frequency) VALUES (?, ?, ?, ?)',
+            (lemma, rank, pos, freq,)
+        )
+        rank += 1
+
+    conn.commit()
