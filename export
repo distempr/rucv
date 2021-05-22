@@ -4,41 +4,47 @@ import json
 import sqlite3
 
 
-SENTENCES_PER_PAGE=50
+WORDS_PER_PAGE = 600
+
 
 conn = sqlite3.connect('rucv.db')
 sentence_cursor = conn.cursor()
-crc_cursor = conn.cursor()
+speaker_cursor = conn.cursor()
 
+word_count = 0
 page_count = 0
 sentence_count = 0
 page = []
+
 
 def save_page(page, data):
     with open(f'/tmp/rucv/{page}.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False)
 
 
-crc_cursor.execute('SELECT DISTINCT(crc) FROM sentence WHERE selected > 0 AND score > 1 ORDER BY score ASC')
-for crc in crc_cursor:
-    sentence = {}
-    sentences = sentence_cursor.execute('SELECT content, gender, filename, selected FROM sentence INNER JOIN speaker ON sentence.speaker = speaker.id WHERE selected > 0 AND crc = ? ORDER BY selected ASC', (crc[0],)).fetchall()
+sentence_cursor.execute('SELECT DISTINCT(crc), content FROM sentence WHERE selected > 0 AND score > 1 ORDER BY score ASC')
+for sentence in sentence_cursor:
+    exported_sentence = {
+        'text': sentence[1]
+    }
+    word_count += sentence[1].count(' ')
 
-    speakers = []
-    for s in sentences:
-        speaker = {}
-        speaker['gender'] = s[1] or 'unknown'
-        speaker['filename'] = s[2]
-        sentence['text'] = s[0]
+    speakers = speaker_cursor.execute('SELECT content, gender, filename, selected FROM sentence INNER JOIN speaker ON sentence.speaker = speaker.id WHERE selected > 0 AND crc = ? ORDER BY selected ASC', (sentence[0],)).fetchall()
 
-        speakers.append(speaker)
+    exported_speakers = []
+    for speaker in speakers:
+        exported_speakers.append({
+            'gender': speaker[1] or 'unknown',
+            'filename': speaker[2]
+        })
 
-    sentence['speakers'] = speakers
+    exported_sentence['speakers'] = exported_speakers
 
-    page.append(sentence)
+    page.append(exported_sentence)
     sentence_count += 1
 
-    if len(page) == SENTENCES_PER_PAGE:
+    if word_count >= WORDS_PER_PAGE:
+        word_count = 0
         page_count += 1
         save_page(page_count, { 'sentences': page })
         page.clear()
