@@ -10,7 +10,6 @@ const genderMap = {
 
 export default function SentenceList(props) {
 	const playClip = (e) => {
-		console.log(e);
 		let clip = new Audio(`clips/${e.currentTarget.dataset.filename}`);
 		clip.play();
 	}

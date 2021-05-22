@@ -75,7 +75,7 @@ export default function App() {
 					<button className="rounded-0 float-end btn btn-lg btn-secondary" onClick={scrollToTop}>Scroll to top</button>
 				}
 				{sentences.length === 0 ||
-		 			<div className="text-begin text-secondary">
+					<div className="text-begin p-1 text-secondary">
 						Clips and sentences are from Mozilla's Common Voice dataset. App built using React, Python, SQLite and Stanford NLP Group's Stanza package.
 					</div>}
 			</footer>
