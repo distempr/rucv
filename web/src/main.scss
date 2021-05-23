@@ -3,3 +3,19 @@
 .play-button {
 	cursor: pointer;
 }
+
+.play-button:hover {
+	background-color: lighten($blue, 10%) !important;
+}
+
+.download-button:hover {
+	background-color: lighten($gray-600, 10%) !important;
+}
+
+.sentence-column {
+	cursor: pointer;
+}
+
+.sentence-column:hover {
+	background-color: #eee;
+}

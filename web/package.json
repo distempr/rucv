@@ -18,7 +18,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && compress-cra",
+    "build": "GENERATE_SOURCEMAP=false react-scripts build && compress-cra",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

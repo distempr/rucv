@@ -14,13 +14,19 @@ export default function SentenceList(props) {
 		clip.play();
 	}
 
+	const copy = (e) => {
+		const sentenceId = e.currentTarget.dataset.sentence;
+		const sentenceText = document.getElementById('sentence-' + sentenceId).innerHTML;
+		navigator.clipboard.writeText(sentenceText);
+	}
+
 	const sentenceNodes = props.sentences.map((sentence, index) =>
 		<div className="row border my-3" key={index}>
-			<div className="col-sm-9 p-3">
+			<div onClick={copy} data-sentence={index} className="col-sm-9 p-3 g-0 sentence-column">
 				<div className="d-inline m-3 fs-5 text-secondary">
 					{index + 1}
 				</div>
-				<div className="d-inline fs-3">
+				<div id={`sentence-${index}`} className="d-inline fs-3">
 					{sentence.text}
 				</div>
 			</div>
@@ -30,7 +36,7 @@ export default function SentenceList(props) {
 			</div> */}
 			<div className="col-sm-3 g-0">
 				<div className="d-flex h-100 align-items-stretch">
-					<a href={`clips/${sentence.speakers[0].filename}`} download className="d-flex p-3 fs-5 text-lignt bg-secondary align-items-center justify-content-center">
+					<a href={`clips/${sentence.speakers[0].filename}`} download className="download-button d-flex p-3 fs-5 text-lignt bg-secondary align-items-center justify-content-center">
 						<FontAwesomeIcon icon={faDownload} color="white" fixedWidth />
 					</a>
 					<div onClick={playClip} data-filename={sentence.speakers[0].filename} className="play-button p-3 d-flex bg-primary text-white align-items-center flex-fill justify-content-center">
