@@ -25,7 +25,7 @@ with open(sys.argv[1], newline='') as file_:
 
         crc = zlib.crc32(sentence.encode())
         cursor.execute(
-            'INSERT OR IGNORE INTO sentence (content, filename, crc, speaker, upvotes, downvotes) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT OR IGNORE INTO sentence (content, original_filename, crc, speaker, upvotes, downvotes) VALUES (?, ?, ?, ?, ?, ?)',
             (sentence, filename, crc, speaker, int(upvotes), int(downvotes))
         )
 

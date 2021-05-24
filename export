@@ -29,7 +29,7 @@ for sentence in sentence_cursor:
     }
     word_count += sentence[1].count(' ')
 
-    speakers = speaker_cursor.execute('SELECT content, gender, filename, selected FROM sentence INNER JOIN speaker ON sentence.speaker = speaker.id WHERE selected > 0 AND crc = ? ORDER BY selected ASC', (sentence[0],)).fetchall()
+    speakers = speaker_cursor.execute('SELECT content, gender, new_filename, selected FROM sentence INNER JOIN speaker ON sentence.speaker = speaker.id WHERE selected > 0 AND crc = ? ORDER BY selected ASC', (sentence[0],)).fetchall()
 
     exported_speakers = []
     for speaker in speakers:
