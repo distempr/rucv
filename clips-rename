@@ -1,20 +1,37 @@
 #!/usr/bin/env python
 
 import os
+import re
 import sqlite3
+import string
+
+from transliterate import translit
 
 
 conn = sqlite3.connect('rucv.db')
-cursor = conn.cursor()
+sentence_cursor = conn.cursor()
+update_cursor = conn.cursor()
+content_regex = re.compile('[^A-z ]+')
 clips_dir = 'corpus/clips/'
 
 
 os.chdir(clips_dir)
 
-cursor.execute('SELECT original_filename, new_filename FROM sentence WHERE new_filename IS NOT NULL')
-for sentence in cursor:
-    original, new = sentence
-    if os.path.isfile(original):
-        os.rename(original, new)
+sentence_cursor.execute('SELECT id, content, original_filename FROM sentence WHERE selected > 0 AND score > 1')
+for sentence in sentence_cursor:
+    tl_content = translit(sentence[1], 'ru', reversed=True)
+    tl_content = content_regex.sub('', tl_content)
+    tl_content = tl_content.lower()
+    tl_content = '-'.join(tl_content.split()[:5])
+    tl_content = tl_content[:48].rstrip('-')
 
-    print(new)
+    original_filename = sentence[2]
+    new_filename = f'{tl_content}-{sentence[0]}.mp3'
+
+    update_cursor.execute('UPDATE sentence SET new_filename = ? WHERE id = ?', (new_filename, sentence[0]))
+    if os.path.isfile(original_filename):
+        os.rename(original_filename, new_filename)
+
+    print(new_filename)
+
+conn.commit()

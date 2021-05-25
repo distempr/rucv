@@ -1,0 +1,13 @@
+certifi==2020.12.5
+chardet==4.0.0
+idna==2.10
+numpy==1.20.3
+protobuf==3.17.1
+requests==2.25.1
+six==1.16.0
+stanza==1.2
+torch==1.8.1
+tqdm==4.61.0
+transliterate==1.10.2
+typing-extensions==3.10.0.0
+urllib3==1.26.4
