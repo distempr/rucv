@@ -1,65 +1,24 @@
 #!/usr/bin/env python
 
-import json
 import sqlite3
 
 
-WORDS_PER_PAGE = 600
-
-
 conn = sqlite3.connect('rucv.db')
-sentence_cursor = conn.cursor()
-speaker_cursor = conn.cursor()
-
-word_count = 0
-page_count = 0
-sentence_count = 0
-page = []
+server_conn = sqlite3.connect('server/rucv.db')
+cursor = conn.cursor()
+server_cursor = server_conn.cursor()
 
 
-def save_page(page, data):
-    with open(f'/tmp/rucv/{page}.json', 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False)
+cursor.execute('SELECT id, gender FROM speaker')
+for speaker in cursor:
+    id_, gender = speaker
+    server_cursor.execute('INSERT OR IGNORE INTO speaker VALUES (?, ?)', (id_, gender))
 
+server_conn.commit()
 
-sentence_cursor.execute('SELECT DISTINCT(crc), content FROM sentence WHERE selected > 0 AND score > 1 ORDER BY score ASC')
-for sentence in sentence_cursor:
-    exported_sentence = {
-        'text': sentence[1]
-    }
-    word_count += sentence[1].count(' ')
+cursor.execute('SELECT id, content, score, new_filename, speaker FROM sentence WHERE selected > 0 AND score > 1 ORDER BY score ASC')
+for sentence in cursor:
+    id_, content, score, filename, speaker = sentence
+    server_cursor.execute('INSERT INTO sentence VALUES (?, ?, ?, ?, ?)', (id_, content, filename, score, speaker))
 
-    speakers = speaker_cursor.execute('SELECT content, gender, new_filename, selected FROM sentence INNER JOIN speaker ON sentence.speaker = speaker.id WHERE selected > 0 AND crc = ? ORDER BY selected ASC', (sentence[0],)).fetchall()
-
-    exported_speakers = []
-    for speaker in speakers:
-        exported_speakers.append({
-            'gender': speaker[1] or 'unknown',
-            'filename': speaker[2]
-        })
-
-    exported_sentence['speakers'] = exported_speakers
-
-    page.append(exported_sentence)
-    sentence_count += 1
-
-    if word_count >= WORDS_PER_PAGE:
-        word_count = 0
-        page_count += 1
-        save_page(page_count, { 'sentences': page })
-        page.clear()
-
-page_count += 1
-if page:
-    save_page(page_count, { 'sentences': page })
-
-for page in range(1, page_count + 1):
-    with open(f'/tmp/rucv/{page}.json', 'r', encoding='utf-8') as f:
-        data = json.load(f)
-
-    data['meta'] = {
-        'totalSentences': sentence_count,
-        'totalPages': page_count
-    }
-
-    save_page(page, data)
+server_conn.commit()
